@@ -671,4 +671,185 @@ router.get('/informes/export', auth, requireRole(['jefe_operaciones']), async (r
   }
 });
 
+// Ruta para obtener todos los formularios (para jefes de tráfico)
+router.get('/todos', auth, requireRole(['jefe_trafico']), async (req, res) => {
+  try {
+    console.log('📋 Obteniendo todos los formularios para jefe de tráfico...');
+    
+    // Verificar que sea jefe de tráfico
+    if (req.user.role !== 'jefe_trafico') {
+      return res.status(403).json({ 
+        error: 'Acceso denegado', 
+        message: 'Solo los jefes de tráfico pueden ver todos los formularios' 
+      });
+    }
+
+    const query = `
+      SELECT 
+        f.id,
+        f.tipo,
+        f.fecha_creacion,
+        f.fecha_modificacion,
+        f.estado,
+        f.jefe_trafico_username,
+        f.datos,
+        u.username as jefe_trafico_username,
+        COALESCE(
+          (SELECT fl.accion 
+           FROM formularios_logs fl 
+           WHERE fl.formulario_id = f.id 
+           ORDER BY fl.fecha_accion DESC 
+           LIMIT 1), 
+          'pendiente'
+        ) as ultima_accion,
+        COALESCE(
+          (SELECT fl.jefe_operaciones_username 
+           FROM formularios_logs fl 
+           WHERE fl.formulario_id = f.id 
+           ORDER BY fl.fecha_accion DESC 
+           LIMIT 1), 
+          NULL
+        ) as ultimo_jefe_operaciones,
+        COALESCE(
+          (SELECT fl.comentario 
+           FROM formularios_logs fl 
+           WHERE fl.formulario_id = f.id 
+           ORDER BY fl.fecha_accion DESC 
+           LIMIT 1), 
+          NULL
+        ) as ultimo_comentario
+      FROM formularios f
+      LEFT JOIN users u ON f.jefe_trafico_id = u.id
+      ORDER BY f.fecha_creacion DESC
+    `;
+
+    const result = await pool.query(query);
+    
+    console.log(`✅ Se encontraron ${result.rows.length} formularios`);
+    
+    res.json({
+      success: true,
+      formularios: result.rows,
+      total: result.rows.length
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo formularios:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor', 
+      message: 'No se pudieron obtener los formularios' 
+    });
+  }
+});
+
+// Ruta para aprobar/rechazar formularios (para jefes de operaciones)
+router.put('/:id/estado', auth, requireRole(['jefe_operaciones']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { accion, comentario } = req.body; // accion: 'aprobado' o 'rechazado'
+    
+    console.log(`📋 Actualizando estado del formulario ${id} a ${accion}...`);
+    
+    // Verificar que el formulario existe
+    const formularioCheck = await pool.query('SELECT id, tipo FROM formularios WHERE id = $1', [id]);
+    if (formularioCheck.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'Formulario no encontrado', 
+        message: 'El formulario especificado no existe' 
+      });
+    }
+
+    // Actualizar estado del formulario
+    await pool.query(
+      'UPDATE formularios SET estado = $1, fecha_modificacion = CURRENT_TIMESTAMP WHERE id = $2',
+      [accion, id]
+    );
+
+    // Registrar en el log
+    await pool.query(`
+      INSERT INTO formularios_logs (
+        formulario_id, 
+        formulario_tipo, 
+        accion, 
+        jefe_operaciones_id, 
+        jefe_operaciones_username, 
+        comentario
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+    `, [
+      id,
+      formularioCheck.rows[0].tipo,
+      accion,
+      req.user.id,
+      req.user.username,
+      comentario || null
+    ]);
+
+    console.log(`✅ Formulario ${id} ${accion} por ${req.user.username}`);
+
+    res.json({
+      success: true,
+      message: `Formulario ${accion} exitosamente`,
+      formulario_id: id,
+      estado: accion,
+      jefe_operaciones: req.user.username,
+      comentario: comentario
+    });
+
+  } catch (error) {
+    console.error('❌ Error actualizando estado del formulario:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor', 
+      message: 'No se pudo actualizar el estado del formulario' 
+    });
+  }
+});
+
+// Ruta para obtener historial de un formulario
+router.get('/:id/historial', auth, requireRole(['jefe_operaciones']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log(`📋 Obteniendo historial del formulario ${id}...`);
+    
+    // Verificar que el formulario existe
+    const formularioCheck = await pool.query('SELECT id, tipo, jefe_trafico_username FROM formularios WHERE id = $1', [id]);
+    if (formularioCheck.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'Formulario no encontrado', 
+        message: 'El formulario especificado no existe' 
+      });
+    }
+
+    // Obtener historial de logs
+    const historialQuery = `
+      SELECT 
+        fl.id,
+        fl.accion,
+        fl.jefe_operaciones_username,
+        fl.comentario,
+        fl.fecha_accion
+      FROM formularios_logs fl
+      WHERE fl.formulario_id = $1
+      ORDER BY fl.fecha_accion DESC
+    `;
+
+    const historialResult = await pool.query(historialQuery, [id]);
+    
+    console.log(`✅ Historial obtenido: ${historialResult.rows.length} registros`);
+
+    res.json({
+      success: true,
+      formulario: formularioCheck.rows[0],
+      historial: historialResult.rows
+    });
+
+  } catch (error) {
+    console.error('❌ Error obteniendo historial:', error);
+    res.status(500).json({ 
+      error: 'Error interno del servidor', 
+      message: 'No se pudo obtener el historial del formulario' 
+    });
+  }
+});
+
 module.exports = router; 

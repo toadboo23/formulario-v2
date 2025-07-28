@@ -136,6 +136,30 @@ const createTables = async () => {
       )
     `);
 
+    // Crear tabla para logging de aprobaciones/rechazos
+    console.log('📋 Creando tabla formularios_logs...');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS formularios_logs (
+        id SERIAL PRIMARY KEY,
+        formulario_id INTEGER NOT NULL,
+        formulario_tipo VARCHAR(50) NOT NULL,
+        accion VARCHAR(20) NOT NULL CHECK (accion IN ('aprobado', 'rechazado', 'pendiente')),
+        jefe_operaciones_id INTEGER NOT NULL,
+        jefe_operaciones_username VARCHAR(100) NOT NULL,
+        comentario TEXT,
+        fecha_accion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (jefe_operaciones_id) REFERENCES users(id),
+        FOREIGN KEY (formulario_id) REFERENCES formularios(id) ON DELETE CASCADE
+      )
+    `);
+    console.log('✅ Tabla formularios_logs creada');
+
+    // Crear índices para mejor rendimiento
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_formularios_logs_formulario_id ON formularios_logs(formulario_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_formularios_logs_jefe_operaciones_id ON formularios_logs(jefe_operaciones_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_formularios_logs_fecha_accion ON formularios_logs(fecha_accion)');
+    console.log('✅ Índices creados para formularios_logs');
+
     // Índices para mejorar rendimiento
     await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_formularios_apertura_created_at ON formularios_apertura(created_at);
@@ -146,6 +170,31 @@ const createTables = async () => {
       CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     `);
+
+    // Crear tabla de formularios
+    console.log('📋 Creando tabla formularios...');
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS formularios (
+        id SERIAL PRIMARY KEY,
+        tipo VARCHAR(50) NOT NULL CHECK (tipo IN ('apertura', 'cierre', 'incidencia')),
+        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        fecha_modificacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        estado VARCHAR(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'aprobado', 'rechazado')),
+        jefe_trafico_id INTEGER NOT NULL,
+        jefe_trafico_username VARCHAR(100) NOT NULL,
+        datos JSONB NOT NULL,
+        FOREIGN KEY (jefe_trafico_id) REFERENCES users(id)
+      )
+    `);
+    console.log('✅ Tabla formularios creada');
+
+    // Agregar columna estado si no existe
+    try {
+      await pool.query('ALTER TABLE formularios ADD COLUMN IF NOT EXISTS estado VARCHAR(20) DEFAULT \'pendiente\' CHECK (estado IN (\'pendiente\', \'aprobado\', \'rechazado\'))');
+      console.log('✅ Columna estado agregada a formularios');
+    } catch (error) {
+      console.log('ℹ️ Columna estado ya existe en formularios');
+    }
 
     console.log('✅ Tablas creadas exitosamente');
   } catch (error) {

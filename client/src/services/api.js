@@ -49,21 +49,24 @@ export const authService = {
 
 // Servicios de formularios
 export const formulariosService = {
-  // Apertura
+  // Obtener todos los formularios (para jefes de tráfico)
+  getAllFormularios: () => api.get('/formularios/todos'),
+  
+  // Aprobar/rechazar formulario (para jefes de operaciones)
+  updateFormularioEstado: (id, accion, comentario) => 
+    api.put(`/formularios/${id}/estado`, { accion, comentario }),
+  
+  // Obtener historial de un formulario
+  getFormularioHistorial: (id) => api.get(`/formularios/${id}/historial`),
+  
+  // Obtener informes
+  getInformes: (fechaDesde, fechaHasta) => 
+    api.get(`/formularios/informes/export?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`),
+  
+  // Crear formularios existentes
   createApertura: (data) => api.post('/formularios/apertura', data),
-  getApertura: (params) => api.get('/formularios/apertura', { params }),
-  
-  // Cierre
   createCierre: (data) => api.post('/formularios/cierre', data),
-  getCierre: (params) => api.get('/formularios/cierre', { params }),
-  
-  // Incidencias
   createIncidencia: (data) => api.post('/formularios/incidencias', data),
-  getIncidencias: (params) => api.get('/formularios/incidencias', { params }),
-  getTiposIncidencias: () => api.get('/formularios/incidencias/tipos'),
-  
-  // Estadísticas
-  getStats: (params) => api.get('/formularios/stats', { params }),
 };
 
 // Servicios de notificaciones

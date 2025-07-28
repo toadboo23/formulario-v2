@@ -73,6 +73,7 @@ const Layout = () => {
       { name: 'Formulario Apertura', href: '/formulario-apertura', icon: FileText },
       { name: 'Formulario Cierre', href: '/formulario-cierre', icon: FileText },
       { name: 'Reportar Incidencia', href: '/incidencias', icon: AlertTriangle },
+      { name: 'Todos los Formularios', href: '/todos-formularios', icon: FileText },
     ] : []),
     ...(isJefeOperaciones ? [
       { name: 'Notificaciones', href: '/notificaciones', icon: Bell, badge: unreadCount > 0 ? unreadCount : null },

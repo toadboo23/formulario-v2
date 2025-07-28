@@ -7,6 +7,7 @@ import FormularioApertura from './pages/FormularioApertura';
 import FormularioCierre from './pages/FormularioCierre';
 import Incidencias from './pages/Incidencias';
 import Notificaciones from './pages/Notificaciones';
+import AllFormularios from './components/AllFormularios';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
 
@@ -55,6 +56,11 @@ const AppRoutes = () => {
         <Route path="incidencias" element={
           <PrivateRoute allowedRoles={['jefe_trafico']}>
             <Incidencias />
+          </PrivateRoute>
+        } />
+        <Route path="todos-formularios" element={
+          <PrivateRoute allowedRoles={['jefe_trafico']}>
+            <AllFormularios />
           </PrivateRoute>
         } />
         
