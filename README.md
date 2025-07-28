@@ -7,6 +7,7 @@ Sistema web para la gestión de formularios de apertura, cierre e incidencias de
 **Secret SSH**: Reconfigurado correctamente
 **Prueba**: echo prueba ahora
 **Secrets**: Verificados y corregidos
+**Despliegue**: Activado con secrets corregidos
 
 ## 🚀 Características
 
