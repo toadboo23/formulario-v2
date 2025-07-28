@@ -1,86 +1,156 @@
-# Dependencies
+# ========================================
+# GITIGNORE ESTRICTO - SOLO CÓDIGO FUENTE
+# ========================================
+
+# ========================================
+# DEPENDENCIAS Y MÓDULOS
+# ========================================
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.npm
+.yarn-integrity
+jspm_packages/
 
-# Environment variables
+# ========================================
+# VARIABLES DE ENTORNO Y CONFIGURACIÓN
+# ========================================
 .env
 .env.local
+.env.development
 .env.development.local
+.env.test
 .env.test.local
+.env.production
 .env.production.local
+.env.staging
+.env.staging.local
 
-# Logs
-logs
+# ========================================
+# ARCHIVOS DE CONFIGURACIÓN SENSIBLES
+# ========================================
+config/production.json
+config/staging.json
+config/development.json
+config/database.json
+config/email.json
+config/aws.json
+config/redis.json
+config/mongodb.json
+config/postgres.json
+config/mysql.json
+
+# ========================================
+# CERTIFICADOS SSL Y CLAVES SSH
+# ========================================
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+*.ppk
+ssh/
+.ssh/
+
+# ========================================
+# LOGS Y ARCHIVOS TEMPORALES
+# ========================================
+logs/
 *.log
-
-# Runtime data
-pids
 *.pid
 *.seed
 *.pid.lock
+*.tmp
+*.temp
+temp/
+tmp/
+.cache/
+.parcel-cache/
 
-# Coverage directory used by tools like istanbul
-coverage/
+# ========================================
+# DIRECTORIOS DE CONSTRUCCIÓN
+# ========================================
+build/
+dist/
+out/
+.next/
+.nuxt/
+.vuepress/dist/
+.serverless/
 
-# nyc test coverage
-.nyc_output
+# ========================================
+# BASE DE DATOS
+# ========================================
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+database/
+db/
 
-# Dependency directories
-node_modules/
-jspm_packages/
+# ========================================
+# ARCHIVOS DE BACKUP
+# ========================================
+*.bak
+*.backup
+*.old
+*.orig
 
-# Optional npm cache directory
-.npm
+# ========================================
+# ARCHIVOS DE PRUEBA Y DEBUG
+# ========================================
+test-*.js
+*-test.js
+test-file-*.js
+check-*.js
+debug-*.js
+verify-*.js
+create-*.js
+transfer-*.js
+fix-*.js
+quick-*.js
+additional-*.js
+remove-*.js
+update-*.js
+check-ports.js
+update-passwords.js
 
-# Optional REPL history
-.node_repl_history
+# ========================================
+# DOCUMENTACIÓN SENSIBLE
+# ========================================
+PUERTOS-CAMBIADOS.md
+VPS-PORTS-VERIFICATION.md
+DEPLOYMENT-*.md
+SETUP-*.md
+CONFIG-*.md
+SECRETS-*.md
+KEYS-*.md
 
-# Output of 'npm pack'
-*.tgz
+# ========================================
+# DIRECTORIOS DE UPLOAD
+# ========================================
+uploads/
+server/uploads/
+client/uploads/
+public/uploads/
+static/uploads/
 
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
-.env
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
-# Serverless directories
-.serverless
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# TernJS port file
-.tern-port
-
-# Stores VSCode versions used for testing VSCode extensions
-.vscode-test
-
-# IDE
+# ========================================
+# IDE Y EDITORES
+# ========================================
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# OS
+# ========================================
+# SISTEMA OPERATIVO
+# ========================================
 .DS_Store
 .DS_Store?
 ._*
@@ -88,71 +158,130 @@ jspm_packages/
 .Trashes
 ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# Docker
-.dockerignore
-
-# Build outputs
-build/
-dist/
-out/
-
-# Temporary files
-*.tmp
-*.temp
-temp/
-tmp/
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Backup files
-*.bak
-*.backup
-
-# Test files
-test-*.js
-*-test.js
-test-file-*.js
-check-ports.js
-update-passwords.js
-
-# Documentation files that might contain sensitive info
-PUERTOS-CAMBIADOS.md
-VPS-PORTS-VERIFICATION.md
-
-# Upload directories
-uploads/
-server/uploads/
-
-# SSL certificates
-*.pem
-*.key
-*.crt
-
-# SSH keys
-id_rsa
-id_rsa.pub
-*.ppk
-
-# Configuration files with sensitive data
-config/production.json
-config/staging.json
-
-# Log files
-*.log
-logs/
-
-# Cache directories
-.cache/
-.parcel-cache/
-
-# Coverage reports
+# ========================================
+# COVERAGE Y TESTING
+# ========================================
 coverage/
 .nyc_output/
+.nyc_output/
+test-results/
+junit.xml
 
-# Local development files
+# ========================================
+# DOCKER
+# ========================================
+.dockerignore
+docker-compose.override.yml
+docker-compose.prod.yml
+docker-compose.staging.yml
+
+# ========================================
+# DESARROLLO LOCAL
+# ========================================
 local/
-dev/ 
+dev/
+development/
+staging/
+production/
+
+# ========================================
+# ARCHIVOS DE LOCK Y CACHE
+# ========================================
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.npmrc
+.yarnrc
+
+# ========================================
+# ARCHIVOS DE CONFIGURACIÓN ESPECÍFICOS
+# ========================================
+.eslintrc.local
+.prettierrc.local
+.babelrc.local
+tsconfig.local.json
+jest.config.local.js
+webpack.config.local.js
+
+# ========================================
+# ARCHIVOS DE MONITOREO Y MÉTRICAS
+# ========================================
+metrics/
+monitoring/
+health/
+status/
+
+# ========================================
+# ARCHIVOS DE SEGURIDAD
+# ========================================
+security/
+secrets/
+keys/
+tokens/
+passwords.txt
+credentials.txt
+
+# ========================================
+# ARCHIVOS DE MIGRACIÓN Y SEED
+# ========================================
+migrations/
+seeds/
+fixtures/
+data/
+
+# ========================================
+# ARCHIVOS DE DESPLIEGUE
+# ========================================
+deploy/
+deployment/
+scripts/deploy/
+scripts/setup/
+scripts/install/
+
+# ========================================
+# ARCHIVOS DE CONFIGURACIÓN DE SERVIDOR
+# ========================================
+nginx.conf
+apache.conf
+.htaccess
+robots.txt
+sitemap.xml
+
+# ========================================
+# ARCHIVOS DE MONITOREO DE PRODUCCIÓN
+# ========================================
+pm2/
+forever/
+nodemon.json
+nodemon-debug.json
+
+# ========================================
+# ARCHIVOS DE ANÁLISIS Y REPORTES
+# ========================================
+reports/
+analytics/
+stats/
+metrics/
+
+# ========================================
+# ARCHIVOS DE BACKUP DE CONFIGURACIÓN
+# ========================================
+*.conf.backup
+*.config.backup
+*.json.backup
+*.yml.backup
+*.yaml.backup
+
+# ========================================
+# ARCHIVOS DE DESARROLLO ESPECÍFICOS
+# ========================================
+dev-*.js
+dev-*.json
+dev-*.yml
+dev-*.yaml
+local-*.js
+local-*.json
+local-*.yml
+local-*.yaml 
