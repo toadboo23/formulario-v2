@@ -3,6 +3,7 @@
 Sistema web para la gestión de formularios de apertura, cierre e incidencias de flota de delivery.
 
 **Estado**: ✅ Configurado para despliegue automático con GitHub Actions
+**Última actualización**: 28 de Julio, 2025
 
 ## 🚀 Características
 
