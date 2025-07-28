@@ -1,0 +1,1 @@
+console.log('El seed de empleados ha sido eliminado. Ahora la carga se hace desde el dashboard por Excel.'); 

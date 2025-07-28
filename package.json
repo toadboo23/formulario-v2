@@ -1,0 +1,32 @@
+{
+  "name": "solucioning-formularios",
+  "version": "1.0.0",
+  "description": "Solucioning - Formularios",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": [
+    "react",
+    "nodejs",
+    "postgresql",
+    "formularios"
+  ],
+  "author": "Solucioning",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "bcryptjs": "^3.0.2",
+    "form-data": "^4.0.4",
+    "json2csv": "^6.0.0-alpha.2",
+    "pg": "^8.16.3"
+  }
+}

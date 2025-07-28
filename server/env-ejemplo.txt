@@ -1,0 +1,5 @@
+DB_USER=formularios_user
+DB_PASSWORD=TU_PASSWORD_AQUI
+DB_NAME=formularios_db
+DB_HOST=localhost
+DB_PORT=5432 

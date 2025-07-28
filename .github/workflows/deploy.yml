@@ -1,0 +1,89 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: |
+        cd server
+        npm install
+        cd ../client
+        npm install
+    
+    - name: Run tests
+      run: |
+        cd server
+        npm test
+        cd ../client
+        npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+    
+    - name: Add VPS to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+    
+    - name: Deploy to VPS
+      env:
+        VPS_HOST: ${{ secrets.VPS_HOST }}
+        VPS_USER: ${{ secrets.VPS_USER }}
+        VPS_PATH: ${{ secrets.VPS_PATH }}
+      run: |
+        # Crear directorio de despliegue si no existe
+        ssh $VPS_USER@$VPS_HOST "mkdir -p $VPS_PATH"
+        
+        # Copiar archivos al VPS
+        scp -r . $VPS_USER@$VPS_HOST:$VPS_PATH/
+        
+        # Configurar variables de entorno en el VPS
+        ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && cp env.example .env"
+        
+        # Construir y ejecutar con Docker Compose
+        ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && docker-compose down"
+        ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && docker-compose build --no-cache"
+        ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && docker-compose up -d"
+        
+        # Verificar que los servicios estén funcionando
+        ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && docker-compose ps"
+        
+        # Health check
+        ssh $VPS_USER@$VPS_HOST "sleep 30 && curl -f http://localhost:8081/api/health || exit 1"
+    
+    - name: Notify deployment status
+      if: always()
+      run: |
+        if [ ${{ job.status }} == 'success' ]; then
+          echo "✅ Deployment successful!"
+          echo "🌐 Frontend: http://${{ secrets.VPS_HOST }}:8082"
+          echo "🔧 Backend API: http://${{ secrets.VPS_HOST }}:8081/api"
+        else
+          echo "❌ Deployment failed!"
+        fi 

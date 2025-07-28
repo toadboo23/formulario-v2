@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL 16
+  postgres:
+    image: postgres:16
+    container_name: formularios-postgres
+    environment:
+      POSTGRES_DB: formularios_db
+      POSTGRES_USER: formularios_user
+      POSTGRES_PASSWORD: formularios_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - formularios-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U formularios_user -d formularios_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend Node.js
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: formularios-backend
+    environment:
+      NODE_ENV: production
+      PORT: 8081
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: formularios_db
+      DB_USER: formularios_user
+      DB_PASSWORD: formularios_password
+      JWT_SECRET: formularios_jwt_secret_key_2024_${JWT_SECRET_SUFFIX:-default}
+      CORS_ORIGIN: http://frontend,http://localhost:8082,http://localhost,${PRODUCTION_URL:-https://tu-dominio.com}
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - formularios-network
+    restart: unless-stopped
+    volumes:
+      - ./docs/employees.csv:/app/docs/employees.csv
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=/api
+    container_name: formularios-frontend
+    environment:
+      - NGINX_HOST=${NGINX_HOST:-localhost}
+      - NGINX_PORT=${NGINX_PORT:-80}
+    ports:
+      - "${FRONTEND_PORT:-8082}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - formularios-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  formularios-network:
+    driver: bridge 
