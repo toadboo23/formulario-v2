@@ -14,6 +14,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Validate CORS Configuration
+      run: |
+        echo "🔍 Validando configuración de CORS..."
+        cd server
+        npm install
+        node scripts/validate-cors.js
+    
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.8.0
       with:
@@ -39,6 +51,9 @@ jobs:
         # Configurar variables de entorno en el VPS
         ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && cp env.example .env"
         
+        # Validar CORS en el VPS antes del despliegue
+        ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && echo '🔍 Validando CORS en VPS...' && grep CORS_ORIGIN .env"
+        
         # Construir y ejecutar con Docker Compose
         ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && docker-compose down"
         ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && docker-compose build --no-cache"
@@ -57,6 +72,8 @@ jobs:
           echo "✅ Deployment successful!"
           echo "🌐 Frontend: http://${{ secrets.VPS_HOST }}:8082"
           echo "🔧 Backend API: http://${{ secrets.VPS_HOST }}:8081/api"
+          echo "🔍 CORS configurado correctamente"
         else
           echo "❌ Deployment failed!"
+          echo "🔍 Revisar logs de CORS en el VPS"
         fi 

@@ -12,17 +12,51 @@ const PORT = process.env.PORT || 5000;
 
 console.log('🚀 Iniciando servidor...');
 
-// Configuración de CORS más flexible
+// Configuración de CORS más flexible y robusta
 const corsOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : [
       'http://localhost:3000',
+      'http://localhost:8082',
       'http://localhost',
       'http://frontend',
       'https://tu-dominio.com'
     ];
 
-console.log('🔐 CORS configurado para:', corsOrigins);
+// Validar y limpiar orígenes CORS
+const validCorsOrigins = corsOrigins.filter(origin => {
+  if (!origin || origin.trim() === '') return false;
+  return true;
+});
+
+console.log('🔐 CORS configurado para:', validCorsOrigins);
+
+// Función para validar origen CORS
+const validateCorsOrigin = (origin) => {
+  // Permitir requests sin origin (como aplicaciones móviles)
+  if (!origin) return true;
+  
+  // Verificar si el origen está en la lista permitida
+  const isAllowed = validCorsOrigins.some(allowedOrigin => {
+    // Comparación exacta
+    if (allowedOrigin === origin) return true;
+    
+    // Soporte para wildcards
+    if (allowedOrigin.includes('*')) {
+      const pattern = allowedOrigin.replace('*', '');
+      return origin.includes(pattern);
+    }
+    
+    return false;
+  });
+  
+  if (!isAllowed) {
+    console.warn('❌ CORS rechazado para origen:', origin);
+    console.warn('📋 Orígenes permitidos:', validCorsOrigins);
+  }
+  
+  return isAllowed;
+};
 
 // Middleware
 app.use(helmet({
@@ -40,13 +74,9 @@ app.use(helmet({
 app.use(cors({
   origin: function (origin, callback) {
     // Permitir requests sin origin (como aplicaciones móviles) o desde orígenes permitidos
-    if (!origin || corsOrigins.some(allowedOrigin => {
-      return allowedOrigin === origin || 
-             (allowedOrigin.includes('*') && origin.includes(allowedOrigin.replace('*', '')));
-    })) {
+    if (validateCorsOrigin(origin)) {
       callback(null, true);
     } else {
-      console.warn('❌ CORS rechazado para origen:', origin);
       callback(new Error('No permitido por CORS'));
     }
   },

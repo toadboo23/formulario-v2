@@ -158,117 +158,69 @@ PRODUCTION_URL=https://tu-dominio.com
 
 ### Despliegue Manual
 
-1. **Clonar en el servidor**
-```bash
-git clone https://github.com/toadboo23/formulario-v2.git
-cd formulario-v2
-```
+1. **Preparar el servidor**:
+   ```bash
+   # Conectar al VPS
+   ssh root@69.62.107.86
+   
+   # Crear directorio
+   mkdir -p /opt/formularios-v2
+   cd /opt/formularios-v2
+   ```
 
-2. **Configurar variables de entorno**
-```bash
-cp env.example .env
-# Editar .env con configuraciones de producción
-```
+2. **Subir archivos**:
+   ```bash
+   # Desde tu máquina local
+   scp -r . root@69.62.107.86:/opt/formularios-v2/
+   ```
 
-3. **Ejecutar con Docker**
-```bash
-docker-compose up -d --build
-```
+3. **Configurar variables de entorno**:
+   ```bash
+   # En el VPS
+   cp env.example .env
+   # Editar .env según sea necesario
+   ```
+
+4. **Desplegar**:
+   ```bash
+   docker-compose down
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
 
 ### Despliegue Automático con GitHub Actions
 
-El proyecto incluye GitHub Actions para despliegue automático. Configura los siguientes secrets en tu repositorio:
+El proyecto está configurado para despliegue automático. Cada push a `main` activará el despliegue.
 
-- `VPS_SSH_PRIVATE_KEY`: Clave SSH privada para conectar al VPS
-- `VPS_HOST`: IP o dominio del VPS
-- `VPS_USER`: Usuario SSH del VPS
-- `VPS_PATH`: Ruta donde desplegar en el VPS
+**Configuración requerida en GitHub Secrets**:
+- `VPS_SSH_PRIVATE_KEY`: Clave SSH privada para el VPS
+- `VPS_HOST`: IP del VPS (69.62.107.86)
+- `VPS_USER`: Usuario del VPS (root)
+- `VPS_PATH`: Ruta en el VPS (/opt/formularios-v2)
+
+### 🔍 **Configuración de CORS**
+
+**IMPORTANTE**: Para prevenir errores de login, asegúrate de que la configuración de CORS incluya todos los orígenes necesarios.
+
+#### Verificar Configuración Actual:
+```bash
+# En el VPS
+cat .env | grep CORS_ORIGIN
+```
+
+#### Configuración Recomendada:
+```env
+CORS_ORIGIN=http://frontend,http://localhost:8082,http://localhost,http://69.62.107.86:8082,https://tu-dominio.com
+```
+
+#### Validación Automática:
+```bash
+# Ejecutar antes del despliegue
+node server/scripts/validate-cors.js
+```
+
+**Ver documentación completa**: [docs/CORS-TROUBLESHOOTING.md](docs/CORS-TROUBLESHOOTING.md)
 
 ## 📊 Estructura del Proyecto
 
 ```
-formulario-v2/
-├── client/                 # Frontend React
-│   ├── src/
-│   │   ├── components/     # Componentes React
-│   │   ├── pages/         # Páginas de la aplicación
-│   │   ├── services/      # Servicios de API
-│   │   └── contexts/      # Contextos de React
-│   ├── public/            # Archivos estáticos
-│   └── nginx.conf         # Configuración de Nginx
-├── server/                # Backend Node.js
-│   ├── routes/            # Rutas de la API
-│   ├── middleware/        # Middleware personalizado
-│   ├── scripts/           # Scripts de migración
-│   └── config/            # Configuración de base de datos
-├── docs/                  # Documentación
-├── docker-compose.yml     # Configuración de Docker
-└── README.md             # Este archivo
-```
-
-## 🔍 API Endpoints
-
-### Autenticación
-- `POST /api/auth/login` - Iniciar sesión
-- `POST /api/auth/register` - Registrar usuario
-- `GET /api/auth/verify` - Verificar token
-
-### Formularios
-- `POST /api/formularios/apertura` - Crear formulario de apertura
-- `POST /api/formularios/cierre` - Crear formulario de cierre
-- `POST /api/formularios/incidencias` - Crear reporte de incidencia
-
-### Notificaciones
-- `GET /api/notificaciones` - Obtener notificaciones
-- `PUT /api/notificaciones/:id` - Procesar notificación
-- `GET /api/notificaciones/:id/files` - Obtener archivos de incidencia
-
-### Archivos
-- `POST /api/files/upload/:incidenciaId` - Subir archivos
-- `GET /api/files/download/:archivoId` - Descargar archivo
-- `DELETE /api/files/:archivoId` - Eliminar archivo
-
-## 🧪 Testing
-
-```bash
-# Backend tests
-cd server
-npm test
-
-# Frontend tests
-cd client
-npm test
-```
-
-## 📝 Scripts Útiles
-
-```bash
-# Verificar puertos disponibles
-node check-ports.js
-
-# Crear usuarios de prueba
-docker exec formularios-backend node scripts/setup-production-users.js
-
-# Backup de base de datos
-docker exec formularios-postgres pg_dump -U formularios_user formularios_db > backup.sql
-```
-
-## 🤝 Contribuir
-
-1. Fork el proyecto
-2. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abrir un Pull Request
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
-
-## 📞 Soporte
-
-Para soporte técnico o preguntas sobre el proyecto, contactar al equipo de desarrollo.
-
----
-
-**Desarrollado con ❤️ para Solucioning** 
