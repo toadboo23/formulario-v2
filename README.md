@@ -4,6 +4,7 @@ Sistema web para la gestión de formularios de apertura, cierre e incidencias de
 
 **Estado**: ✅ Configurado para despliegue automático con GitHub Actions
 **Última actualización**: 28 de Julio, 2025
+**Secret SSH**: Reconfigurado correctamente
 
 ## 🚀 Características
 
