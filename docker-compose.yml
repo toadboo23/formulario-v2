@@ -37,7 +37,7 @@ services:
       DB_USER: formularios_user
       DB_PASSWORD: formularios_password
       JWT_SECRET: formularios_jwt_secret_key_2024_${JWT_SECRET_SUFFIX:-default}
-      CORS_ORIGIN: http://frontend,http://localhost:8082,http://localhost,${PRODUCTION_URL:-https://tu-dominio.com}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://frontend,http://localhost:8082,http://localhost,http://69.62.107.86:8082,https://tu-dominio.com}
     ports:
       - "8081:8081"
     depends_on:
