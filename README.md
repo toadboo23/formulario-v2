@@ -2,6 +2,8 @@
 
 Sistema web para la gestión de formularios de apertura, cierre e incidencias de flota de delivery.
 
+**Estado**: ✅ Configurado para despliegue automático con GitHub Actions
+
 ## 🚀 Características
 
 - **Formularios de Apertura**: Gestión de empleados no operativos, vehículos y problemas de la jornada
