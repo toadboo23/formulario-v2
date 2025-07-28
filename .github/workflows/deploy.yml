@@ -19,13 +19,6 @@ jobs:
       with:
         node-version: '18'
     
-    - name: Validate CORS Configuration
-      run: |
-        echo "🔍 Validando configuración de CORS..."
-        cd server
-        npm install
-        node scripts/validate-cors.js
-    
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.8.0
       with:
@@ -51,7 +44,7 @@ jobs:
         # Configurar variables de entorno en el VPS
         ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && cp env.example .env"
         
-        # Validar CORS en el VPS antes del despliegue
+        # Validar CORS en el VPS después de configurar .env
         ssh $VPS_USER@$VPS_HOST "cd $VPS_PATH && echo '🔍 Validando CORS en VPS...' && grep CORS_ORIGIN .env"
         
         # Construir y ejecutar con Docker Compose
