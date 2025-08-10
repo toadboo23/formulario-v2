@@ -569,7 +569,7 @@ router.get('/stats', auth, requireRole(['jefe_operaciones']), async (req, res) =
   }
 });
 
-// Exportar informe CSV (solo jefe de operaciones)
+// Exportar informe Excel (solo jefe de operaciones)
 router.get('/informes/export', auth, requireRole(['jefe_operaciones']), async (req, res) => {
   try {
     const { fecha_desde, fecha_hasta } = req.query;
@@ -577,13 +577,56 @@ router.get('/informes/export', auth, requireRole(['jefe_operaciones']), async (r
       return res.status(400).json({ error: 'Debe indicar fecha_desde y fecha_hasta' });
     }
 
-    // Formularios de apertura
+    // Importar ExcelJS
+    const ExcelJS = require('exceljs');
+    const moment = require('moment');
+
+    // Crear nuevo workbook
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Solucioning Formularios';
+    workbook.lastModifiedBy = 'Sistema de Formularios';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    // Función para formatear arrays como texto
+    const formatArray = (arr) => {
+      if (!arr || !Array.isArray(arr)) return '';
+      return arr.join(', ');
+    };
+
+    // Función para formatear fechas
+    const formatDate = (date) => {
+      if (!date) return '';
+      return moment(date).format('DD/MM/YYYY HH:mm:ss');
+    };
+
+    // ===== HOJA 1: FORMULARIOS DE APERTURA =====
+    const worksheetApertura = workbook.addWorksheet('Formularios Apertura');
+    
+    // Configurar columnas para apertura
+    worksheetApertura.columns = [
+      { header: 'ID', key: 'id', width: 8 },
+      { header: 'Fecha', key: 'fecha', width: 12 },
+      { header: 'Hora', key: 'hora', width: 12 },
+      { header: 'Jefe de Tráfico', key: 'jefe_trafico', width: 20 },
+      { header: 'Empleados No Operativos', key: 'empleados_no_operativos', width: 30 },
+      { header: 'Empleados de Baja', key: 'empleados_baja', width: 25 },
+      { header: 'Vehículos No Operativos', key: 'vehiculos_no_operativos', width: 30 },
+      { header: 'Necesitan Sustitución', key: 'necesitan_sustitucion', width: 25 },
+      { header: 'No Conectados Plataforma', key: 'no_conectados_plataforma', width: 30 },
+      { header: 'Sin Batería Móvil', key: 'sin_bateria_movil', width: 25 },
+      { header: 'Sin Batería Vehículo', key: 'sin_bateria_vehiculo', width: 25 },
+      { header: 'Observaciones', key: 'observaciones', width: 40 },
+      { header: 'Estado', key: 'estado', width: 15 },
+      { header: 'Fecha Creación', key: 'fecha_creacion', width: 20 }
+    ];
+
+    // Obtener datos de formularios de apertura
     const apertura = await pool.query(`
       SELECT 
-        'apertura' as tipo, 
         fa.id, 
         DATE(fa.created_at) as fecha, 
-        fa.created_at as hora, 
+        TO_CHAR(fa.created_at, 'HH24:MI:SS') as hora, 
         u.username as jefe_trafico, 
         fa.empleados_no_operativos, 
         fa.empleados_baja, 
@@ -594,79 +637,246 @@ router.get('/informes/export', auth, requireRole(['jefe_operaciones']), async (r
         fa.sin_bateria_vehiculo, 
         fa.observaciones, 
         COALESCE(n.estado, 'pendiente') as estado, 
-        COALESCE(n.fecha_creacion, fa.created_at) as fecha_creacion
+        fa.created_at as fecha_creacion
       FROM formularios_apertura fa
       JOIN users u ON fa.user_id = u.id
       LEFT JOIN notificaciones n ON n.formulario_id = fa.id AND n.tipo_formulario = 'apertura'
       WHERE DATE(fa.created_at) BETWEEN $1 AND $2
+      ORDER BY fa.created_at DESC
     `, [fecha_desde, fecha_hasta]);
 
-    // Formularios de cierre
+    // Agregar datos a la hoja de apertura
+    apertura.rows.forEach(row => {
+      worksheetApertura.addRow({
+        id: row.id,
+        fecha: moment(row.fecha).format('DD/MM/YYYY'),
+        hora: row.hora,
+        jefe_trafico: row.jefe_trafico,
+        empleados_no_operativos: formatArray(row.empleados_no_operativos),
+        empleados_baja: formatArray(row.empleados_baja),
+        vehiculos_no_operativos: formatArray(row.vehiculos_no_operativos),
+        necesitan_sustitucion: formatArray(row.necesitan_sustitucion),
+        no_conectados_plataforma: formatArray(row.no_conectados_plataforma),
+        sin_bateria_movil: formatArray(row.sin_bateria_movil),
+        sin_bateria_vehiculo: formatArray(row.sin_bateria_vehiculo),
+        observaciones: row.observaciones || '',
+        estado: row.estado,
+        fecha_creacion: formatDate(row.fecha_creacion)
+      });
+    });
+
+    // ===== HOJA 2: FORMULARIOS DE CIERRE =====
+    const worksheetCierre = workbook.addWorksheet('Formularios Cierre');
+    
+    // Configurar columnas para cierre
+    worksheetCierre.columns = [
+      { header: 'ID', key: 'id', width: 8 },
+      { header: 'Fecha', key: 'fecha', width: 12 },
+      { header: 'Hora', key: 'hora', width: 12 },
+      { header: 'Jefe de Tráfico', key: 'jefe_trafico', width: 20 },
+      { header: 'Análisis de Datos', key: 'analisis_datos', width: 50 },
+      { header: 'Problemas de la Jornada', key: 'problemas_jornada', width: 50 },
+      { header: 'Propuesta de Soluciones', key: 'propuesta_soluciones', width: 50 },
+      { header: 'Estado', key: 'estado', width: 15 },
+      { header: 'Fecha Creación', key: 'fecha_creacion', width: 20 }
+    ];
+
+    // Obtener datos de formularios de cierre
     const cierre = await pool.query(`
       SELECT 
-        'cierre' as tipo, 
         fc.id, 
         DATE(fc.created_at) as fecha, 
-        fc.created_at as hora, 
+        TO_CHAR(fc.created_at, 'HH24:MI:SS') as hora, 
         u.username as jefe_trafico, 
         fc.analisis_datos, 
         fc.problemas_jornada, 
         fc.propuesta_soluciones, 
         COALESCE(n.estado, 'pendiente') as estado, 
-        COALESCE(n.fecha_creacion, fc.created_at) as fecha_creacion
+        fc.created_at as fecha_creacion
       FROM formularios_cierre fc
       JOIN users u ON fc.user_id = u.id
       LEFT JOIN notificaciones n ON n.formulario_id = fc.id AND n.tipo_formulario = 'cierre'
       WHERE DATE(fc.created_at) BETWEEN $1 AND $2
+      ORDER BY fc.created_at DESC
     `, [fecha_desde, fecha_hasta]);
 
-    // Incidencias
+    // Agregar datos a la hoja de cierre
+    cierre.rows.forEach(row => {
+      worksheetCierre.addRow({
+        id: row.id,
+        fecha: moment(row.fecha).format('DD/MM/YYYY'),
+        hora: row.hora,
+        jefe_trafico: row.jefe_trafico,
+        analisis_datos: row.analisis_datos || '',
+        problemas_jornada: row.problemas_jornada || '',
+        propuesta_soluciones: row.propuesta_soluciones || '',
+        estado: row.estado,
+        fecha_creacion: formatDate(row.fecha_creacion)
+      });
+    });
+
+    // ===== HOJA 3: INCIDENCIAS =====
+    const worksheetIncidencias = workbook.addWorksheet('Incidencias');
+    
+    // Configurar columnas para incidencias
+    worksheetIncidencias.columns = [
+      { header: 'ID', key: 'id', width: 8 },
+      { header: 'Fecha', key: 'fecha', width: 12 },
+      { header: 'Hora', key: 'hora', width: 12 },
+      { header: 'Jefe de Tráfico', key: 'jefe_trafico', width: 20 },
+      { header: 'Empleados Afectados', key: 'empleados_incidencia', width: 30 },
+      { header: 'Tipo de Incidencia', key: 'tipo_incidencia', width: 25 },
+      { header: 'Observaciones', key: 'observaciones', width: 50 },
+      { header: 'Estado', key: 'estado', width: 15 },
+      { header: 'Fecha Creación', key: 'fecha_creacion', width: 20 }
+    ];
+
+    // Obtener datos de incidencias
     const incidencias = await pool.query(`
       SELECT 
-        'incidencia' as tipo, 
         i.id, 
         DATE(i.created_at) as fecha, 
-        i.created_at as hora, 
+        TO_CHAR(i.created_at, 'HH24:MI:SS') as hora, 
         u.username as jefe_trafico, 
         i.empleados_incidencia, 
         i.tipo_incidencia, 
         i.observaciones, 
         COALESCE(n.estado, 'pendiente') as estado, 
-        COALESCE(n.fecha_creacion, i.created_at) as fecha_creacion
+        i.created_at as fecha_creacion
       FROM incidencias i
       JOIN users u ON i.user_id = u.id
       LEFT JOIN notificaciones n ON n.formulario_id = i.id AND n.tipo_formulario = 'incidencia'
       WHERE DATE(i.created_at) BETWEEN $1 AND $2
+      ORDER BY i.created_at DESC
     `, [fecha_desde, fecha_hasta]);
 
-    // Unir todos los resultados
-    const rows = [
-      ...apertura.rows,
-      ...cierre.rows,
-      ...incidencias.rows
+    // Agregar datos a la hoja de incidencias
+    incidencias.rows.forEach(row => {
+      worksheetIncidencias.addRow({
+        id: row.id,
+        fecha: moment(row.fecha).format('DD/MM/YYYY'),
+        hora: row.hora,
+        jefe_trafico: row.jefe_trafico,
+        empleados_incidencia: formatArray(row.empleados_incidencia),
+        tipo_incidencia: row.tipo_incidencia || '',
+        observaciones: row.observaciones || '',
+        estado: row.estado,
+        fecha_creacion: formatDate(row.fecha_creacion)
+      });
+    });
+
+    // ===== HOJA 4: RESUMEN GENERAL =====
+    const worksheetResumen = workbook.addWorksheet('Resumen General');
+    
+    // Configurar columnas para resumen
+    worksheetResumen.columns = [
+      { header: 'Tipo de Formulario', key: 'tipo', width: 20 },
+      { header: 'Total Registros', key: 'total', width: 15 },
+      { header: 'Pendientes', key: 'pendientes', width: 15 },
+      { header: 'Aprobados', key: 'aprobados', width: 15 },
+      { header: 'Rechazados', key: 'rechazados', width: 15 }
     ];
 
-    if (rows.length === 0) {
+    // Calcular estadísticas
+    const statsApertura = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN n.estado = 'pendiente' OR n.estado IS NULL THEN 1 END) as pendientes,
+        COUNT(CASE WHEN n.estado = 'aprobado' THEN 1 END) as aprobados,
+        COUNT(CASE WHEN n.estado = 'rechazado' THEN 1 END) as rechazados
+      FROM formularios_apertura fa
+      LEFT JOIN notificaciones n ON n.formulario_id = fa.id AND n.tipo_formulario = 'apertura'
+      WHERE DATE(fa.created_at) BETWEEN $1 AND $2
+    `, [fecha_desde, fecha_hasta]);
+
+    const statsCierre = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN n.estado = 'pendiente' OR n.estado IS NULL THEN 1 END) as pendientes,
+        COUNT(CASE WHEN n.estado = 'aprobado' THEN 1 END) as aprobados,
+        COUNT(CASE WHEN n.estado = 'rechazado' THEN 1 END) as rechazados
+      FROM formularios_cierre fc
+      LEFT JOIN notificaciones n ON n.formulario_id = fc.id AND n.tipo_formulario = 'cierre'
+      WHERE DATE(fc.created_at) BETWEEN $1 AND $2
+    `, [fecha_desde, fecha_hasta]);
+
+    const statsIncidencias = await pool.query(`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN n.estado = 'pendiente' OR n.estado IS NULL THEN 1 END) as pendientes,
+        COUNT(CASE WHEN n.estado = 'aprobado' THEN 1 END) as aprobados,
+        COUNT(CASE WHEN n.estado = 'rechazado' THEN 1 END) as rechazados
+      FROM incidencias i
+      LEFT JOIN notificaciones n ON n.formulario_id = i.id AND n.tipo_formulario = 'incidencia'
+      WHERE DATE(i.created_at) BETWEEN $1 AND $2
+    `, [fecha_desde, fecha_hasta]);
+
+    // Agregar datos al resumen
+    worksheetResumen.addRow({
+      tipo: 'Formularios de Apertura',
+      total: statsApertura.rows[0].total,
+      pendientes: statsApertura.rows[0].pendientes,
+      aprobados: statsApertura.rows[0].aprobados,
+      rechazados: statsApertura.rows[0].rechazados
+    });
+
+    worksheetResumen.addRow({
+      tipo: 'Formularios de Cierre',
+      total: statsCierre.rows[0].total,
+      pendientes: statsCierre.rows[0].pendientes,
+      aprobados: statsCierre.rows[0].aprobados,
+      rechazados: statsCierre.rows[0].rechazados
+    });
+
+    worksheetResumen.addRow({
+      tipo: 'Incidencias',
+      total: statsIncidencias.rows[0].total,
+      pendientes: statsIncidencias.rows[0].pendientes,
+      aprobados: statsIncidencias.rows[0].aprobados,
+      rechazados: statsIncidencias.rows[0].rechazados
+    });
+
+    // Aplicar estilos a todas las hojas
+    [worksheetApertura, worksheetCierre, worksheetIncidencias, worksheetResumen].forEach(worksheet => {
+      // Estilo para el header
+      worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: '4472C4' }
+      };
+      worksheet.getRow(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      // Bordes para todas las celdas
+      worksheet.eachRow((row, rowNumber) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+    });
+
+    // Verificar si hay datos
+    const totalRegistros = apertura.rows.length + cierre.rows.length + incidencias.rows.length;
+    if (totalRegistros === 0) {
       return res.status(404).json({ error: 'No hay datos en el rango seleccionado' });
     }
 
-    // Convertir arrays a string para CSV
-    const rowsForCsv = rows.map(row => {
-      const r = { ...row };
-      Object.keys(r).forEach(k => {
-        if (Array.isArray(r[k])) r[k] = r[k].join(', ');
-      });
-      return r;
-    });
+    // Generar archivo Excel
+    const buffer = await workbook.xlsx.writeBuffer();
+    
+    // Configurar headers de respuesta
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=informe_formularios_${fecha_desde}_a_${fecha_hasta}.xlsx`);
+    
+    return res.send(buffer);
 
-    const parser = new Parser();
-    const csv = parser.parse(rowsForCsv);
-
-    res.header('Content-Type', 'text/csv');
-    res.attachment(`informe_formularios_${fecha_desde}_a_${fecha_hasta}.csv`);
-    return res.send(csv);
   } catch (error) {
-    console.error('Error exportando informe CSV:', error);
+    console.error('Error exportando informe Excel:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

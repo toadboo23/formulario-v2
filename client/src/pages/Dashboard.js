@@ -59,7 +59,7 @@ const Dashboard = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `informe_formularios_${fechaDesde}_a_${fechaHasta}.csv`;
+      a.download = `informe_formularios_${fechaDesde}_a_${fechaHasta}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -111,7 +111,7 @@ const Dashboard = () => {
                 className="btn btn-primary"
                 onClick={() => setExportModalOpen(true)}
               >
-                Exportar informe CSV
+                Exportar informe Excel
               </button>
             )}
             <div className="text-right">
@@ -145,7 +145,7 @@ const Dashboard = () => {
             >
               ×
             </button>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Exportar informe CSV</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Exportar informe Excel</h2>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha desde</label>
               <input
@@ -169,7 +169,7 @@ const Dashboard = () => {
               onClick={handleExport}
               disabled={!fechaDesde || !fechaHasta || exportLoading}
             >
-              {exportLoading ? 'Generando...' : 'Descargar CSV'}
+              {exportLoading ? 'Generando...' : 'Descargar Excel'}
             </button>
           </div>
         </div>
